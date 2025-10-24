@@ -1,0 +1,24 @@
+FROM mcr.microsoft.com/mssql/server:2019-latest
+
+# Install SSH and PowerShell
+USER root
+RUN apt-get update && \
+    apt-get install -y openssh-server wget apt-transport-https software-properties-common && \
+    wget -q https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y powershell && \
+    mkdir /var/run/sshd && \
+    echo 'root:SshPassw0rd!' | chpasswd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' /etc/pam.d/sshd
+
+# Expose SQL and SSH ports
+EXPOSE 1433 22
+
+# Set SQL Server environment
+ENV ACCEPT_EULA=Y
+ENV SA_PASSWORD=YourStrong!Passw0rd
+
+# Start both SQL Server and SSH
+CMD service ssh start && /opt/mssql/bin/sqlservr
